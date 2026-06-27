@@ -1,0 +1,10 @@
+body{
+margin:0;
+overflow:hidden;
+background:#202020;
+}
+
+canvas{
+display:block;
+touch-action:none;
+}
