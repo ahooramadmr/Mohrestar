@@ -5,90 +5,124 @@ function resize(){
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
-
 resize();
-window.addEventListener("resize",resize);
+window.addEventListener("resize", resize);
 
-const ball={
-    x:0,
-    y:0,
-    r:15
+const ball = {
+    x: window.innerWidth/2,
+    y: window.innerHeight/2,
+    r: 15
 };
 
-const blue=[];
-const red=[];
+const players = [];
 
-function createPlayers(){
+for(let i=0;i<5;i++){
+    players.push({
+        x:150,
+        y:150+i*90,
+        r:22,
+        color:"dodgerblue",
+        vx:0,
+        vy:0
+    });
 
-    ball.x=canvas.width/2;
-    ball.y=canvas.height/2;
+    players.push({
+        x:window.innerWidth-150,
+        y:150+i*90,
+        r:22,
+        color:"crimson",
+        vx:0,
+        vy:0
+    });
+}
 
-    blue.length=0;
-    red.length=0;
+let selected = null;
+let startX = 0;
+let startY = 0;
 
-    for(let i=0;i<5;i++){
+canvas.addEventListener("pointerdown",e=>{
 
-        blue.push({
-            x:canvas.width*0.25,
-            y:120+i*90,
-            r:22
-        });
+    for(let p of players){
 
-        red.push({
-            x:canvas.width*0.75,
-            y:120+i*90,
-            r:22
-        });
+        let dx=e.clientX-p.x;
+        let dy=e.clientY-p.y;
+
+        if(Math.sqrt(dx*dx+dy*dy)<p.r){
+
+            selected=p;
+            startX=e.clientX;
+            startY=e.clientY;
+
+        }
+
+    }
+
+});
+
+canvas.addEventListener("pointerup",e=>{
+
+    if(selected){
+
+        selected.vx=(startX-e.clientX)/6;
+        selected.vy=(startY-e.clientY)/6;
+
+        selected=null;
+
+    }
+
+});
+
+function update(){
+
+    for(let p of players){
+
+        p.x+=p.vx;
+        p.y+=p.vy;
+
+        p.vx*=0.97;
+        p.vy*=0.97;
 
     }
 
 }
 
-createPlayers();
-
 function drawField(){
 
-ctx.fillStyle="#2e8b57";
-ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="#2e8b57";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
-ctx.strokeStyle="white";
-ctx.lineWidth=5;
+    ctx.strokeStyle="white";
+    ctx.lineWidth=4;
 
-ctx.strokeRect(40,40,canvas.width-80,canvas.height-80);
+    ctx.strokeRect(40,40,canvas.width-80,canvas.height-80);
 
-ctx.beginPath();
-ctx.arc(canvas.width/2,canvas.height/2,90,0,Math.PI*2);
-ctx.stroke();
-
-ctx.beginPath();
-ctx.moveTo(canvas.width/2,40);
-ctx.lineTo(canvas.width/2,canvas.height-40);
-ctx.stroke();
-
-}
-
-function drawCircle(x,y,r,color){
-
-ctx.beginPath();
-ctx.arc(x,y,r,0,Math.PI*2);
-ctx.fillStyle=color;
-ctx.fill();
+    ctx.beginPath();
+    ctx.arc(canvas.width/2,canvas.height/2,90,0,Math.PI*2);
+    ctx.stroke();
 
 }
 
 function draw(){
 
-drawField();
+    update();
 
-for(let p of blue)
-drawCircle(p.x,p.y,p.r,"dodgerblue");
+    drawField();
 
-for(let p of red)
-drawCircle(p.x,p.y,p.r,"crimson");
+    for(let p of players){
 
-drawCircle(ball.x,ball.y,ball.r,"white");
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=p.color;
+        ctx.fill();
 
-requestAnimationFrame(draw);
+    }
+
+    ctx.beginPath();
+    ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+    ctx.fillStyle="white";
+    ctx.fill();
+
+    requestAnimationFrame(draw);
 
 }
 
