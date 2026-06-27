@@ -1,14 +1,21 @@
-// ======================================
-// Soccer Stars - Game.js
-// بخش ۱ از ۵
-// ======================================
+// ===========================================
+// Soccer Stars HTML5
+// game.js
+// بخش ۱ از ۱۰
+// ===========================================
+
+"use strict";
+
+// -------------------------------------------
+// Canvas
+// -------------------------------------------
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// ------------------------------
+// -------------------------------------------
 // اندازه صفحه
-// ------------------------------
+// -------------------------------------------
 
 function resizeCanvas() {
 
@@ -21,100 +28,126 @@ resizeCanvas();
 
 window.addEventListener("resize", resizeCanvas);
 
-// ------------------------------
+// -------------------------------------------
 // تنظیمات بازی
-// ------------------------------
+// -------------------------------------------
 
 const GAME = {
 
-    friction: 0.98,
+    diskRadius:22,
 
-    bounce: 0.85,
+    ballRadius:14,
 
-    diskRadius: 22,
+    friction:0.98,
 
-    ballRadius: 14,
+    bounce:0.85,
 
-    maxPower: 120,
+    maxPower:120,
 
-    goalHeight: 180
+    goalHeight:180,
+
+    winScore:5,
+
+    fieldMargin:40
 
 };
 
-// ------------------------------
-// امتیاز
-// ------------------------------
+// -------------------------------------------
+// وضعیت بازی
+// -------------------------------------------
 
 let blueScore = 0;
-let redScore = 0;
 
-// ------------------------------
-// نوبت
-// ------------------------------
+let redScore = 0;
 
 let currentTurn = "blue";
 
 let moving = false;
 
-// ------------------------------
+let gameOver = false;
+
+// -------------------------------------------
 // توپ
-// ------------------------------
+// -------------------------------------------
 
 const ball = {
 
-    x: 0,
+    x:0,
 
-    y: 0,
+    y:0,
 
-    vx: 0,
+    vx:0,
 
-    vy: 0,
+    vy:0,
 
-    r: GAME.ballRadius,
+    r:GAME.ballRadius,
 
-    color: "#ffffff"
+    color:"#ffffff"
 
 };
 
-// ------------------------------
+// -------------------------------------------
 // بازیکنان
-// ------------------------------
+// -------------------------------------------
 
 const players = [];
 
-// ------------------------------
-// ساخت مهره ها
-// ------------------------------
+// -------------------------------------------
+// ساخت مهره
+// -------------------------------------------
 
-function createPlayers() {
+function createPlayer(team,x,y,color){
+
+    return{
+
+        team:team,
+
+        x:x,
+
+        y:y,
+
+        vx:0,
+
+        vy:0,
+
+        r:GAME.diskRadius,
+
+        color:color
+
+    };
+
+}
+
+// -------------------------------------------
+// ساخت زمین
+// -------------------------------------------
+
+function createPlayers(){
 
     players.length = 0;
 
-    ball.x = canvas.width / 2;
-
-    ball.y = canvas.height / 2;
+    ball.x = canvas.width/2;
+    ball.y = canvas.height/2;
 
     // تیم آبی
 
     for(let i=0;i<5;i++){
 
-        players.push({
+        players.push(
 
-            team:"blue",
+            createPlayer(
 
-            color:"#2196F3",
+                "blue",
 
-            x:canvas.width*0.25,
+                canvas.width*0.25,
 
-            y:140+i*90,
+                140+i*90,
 
-            vx:0,
+                "#2196F3"
 
-            vy:0,
+            )
 
-            r:GAME.diskRadius
-
-        });
+        );
 
     }
 
@@ -122,23 +155,21 @@ function createPlayers() {
 
     for(let i=0;i<5;i++){
 
-        players.push({
+        players.push(
 
-            team:"red",
+            createPlayer(
 
-            color:"#F44336",
+                "red",
 
-            x:canvas.width*0.75,
+                canvas.width*0.75,
 
-            y:140+i*90,
+                140+i*90,
 
-            vx:0,
+                "#F44336"
 
-            vy:0,
+            )
 
-            r:GAME.diskRadius
-
-        });
+        );
 
     }
 
@@ -146,45 +177,61 @@ function createPlayers() {
 
 createPlayers();
 
-// ------------------------------
+// -------------------------------------------
 // کنترل لمس
-// ------------------------------
+// -------------------------------------------
 
-let selected=null;
+let selected = null;
 
-let startX=0;
+let startX = 0;
 
-let startY=0;
+let startY = 0;
 
-let currentX=0;
+let currentX = 0;
 
-let currentY=0;
-// ======================================
-// Soccer Stars - Game.js
-// بخش ۲ از ۵
-// ======================================
+let currentY = 0;
 
-// ------------------------------
-// لمس مهره
-// ------------------------------
+// پایان بخش ۱ از ۱۰
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۲ از ۱۰
+// ===========================================
 
-canvas.addEventListener("pointerdown", function (e) {
+// -------------------------------------------
+// کنترل لمس
+// -------------------------------------------
+
+let selected = null;
+
+let startX = 0;
+let startY = 0;
+
+let currentX = 0;
+let currentY = 0;
+
+// -------------------------------------------
+// انتخاب مهره
+// -------------------------------------------
+
+canvas.addEventListener("pointerdown", function(e){
+
+    if(gameOver) return;
+
+    if(moving) return;
 
     const x = e.clientX;
     const y = e.clientY;
 
-    if (moving)
-        return;
+    for(let p of players){
 
-    for (let p of players) {
-
-        if (p.team !== currentTurn)
+        if(p.team !== currentTurn)
             continue;
 
         const dx = x - p.x;
         const dy = y - p.y;
 
-        if (Math.sqrt(dx * dx + dy * dy) <= p.r) {
+        if(Math.sqrt(dx*dx + dy*dy) <= p.r){
 
             selected = p;
 
@@ -202,13 +249,13 @@ canvas.addEventListener("pointerdown", function (e) {
 
 });
 
-// ------------------------------
+// -------------------------------------------
 // حرکت انگشت
-// ------------------------------
+// -------------------------------------------
 
-canvas.addEventListener("pointermove", function (e) {
+canvas.addEventListener("pointermove", function(e){
 
-    if (!selected)
+    if(!selected)
         return;
 
     currentX = e.clientX;
@@ -216,21 +263,23 @@ canvas.addEventListener("pointermove", function (e) {
 
 });
 
-// ------------------------------
+// -------------------------------------------
 // رها کردن مهره
-// ------------------------------
+// -------------------------------------------
 
-canvas.addEventListener("pointerup", function (e) {
+canvas.addEventListener("pointerup", function(e){
 
-    if (!selected)
+    if(!selected)
         return;
 
     let dx = startX - e.clientX;
     let dy = startY - e.clientY;
 
-    let power = Math.sqrt(dx * dx + dy * dy);
+    let power = Math.sqrt(dx*dx + dy*dy);
 
-    if (power > GAME.maxPower) {
+    // محدود کردن قدرت شلیک
+
+    if(power > GAME.maxPower){
 
         const scale = GAME.maxPower / power;
 
@@ -248,15 +297,18 @@ canvas.addEventListener("pointerup", function (e) {
 
 });
 
-// ------------------------------
-// بروزرسانی بازی
-// ------------------------------
+// -------------------------------------------
+// شروع موتور بازی
+// -------------------------------------------
 
-function update() {
+function update(){
+
+    if(gameOver)
+        return;
 
     // حرکت مهره‌ها
 
-    for (let p of players) {
+    for(let p of players){
 
         p.x += p.vx;
         p.y += p.vy;
@@ -264,10 +316,10 @@ function update() {
         p.vx *= GAME.friction;
         p.vy *= GAME.friction;
 
-        if (Math.abs(p.vx) < 0.02)
+        if(Math.abs(p.vx) < 0.02)
             p.vx = 0;
 
-        if (Math.abs(p.vy) < 0.02)
+        if(Math.abs(p.vy) < 0.02)
             p.vy = 0;
 
     }
@@ -280,21 +332,22 @@ function update() {
     ball.vx *= GAME.friction;
     ball.vy *= GAME.friction;
 
-    if (Math.abs(ball.vx) < 0.02)
+    if(Math.abs(ball.vx) < 0.02)
         ball.vx = 0;
 
-    if (Math.abs(ball.vy) < 0.02)
+    if(Math.abs(ball.vy) < 0.02)
         ball.vy = 0;
 
 }
-// ======================================
-// Soccer Stars - Game.js
-// بخش ۳ از ۵
-// ======================================
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۳ از ۱۰
+// ===========================================
 
-// ------------------------------
+// -------------------------------------------
 // برخورد با دیواره
-// ------------------------------
+// -------------------------------------------
 
 function wallCollision(obj){
 
@@ -328,51 +381,53 @@ function wallCollision(obj){
 
 }
 
-// ------------------------------
-// برخورد مهره با توپ
-// ------------------------------
+// -------------------------------------------
+// برخورد توپ با مهره
+// -------------------------------------------
 
 function ballCollision(player){
 
-    let dx = ball.x - player.x;
-    let dy = ball.y - player.y;
+    const dx = ball.x - player.x;
+    const dy = ball.y - player.y;
 
-    let dist = Math.sqrt(dx*dx + dy*dy);
+    const dist = Math.sqrt(dx*dx + dy*dy);
 
-    let minDist = ball.r + player.r;
+    const minDist = ball.r + player.r;
 
     if(dist < minDist){
 
-        let angle = Math.atan2(dy,dx);
+        const angle = Math.atan2(dy,dx);
 
-        ball.vx = Math.cos(angle) * 8;
-        ball.vy = Math.sin(angle) * 8;
+        const force = 8;
+
+        ball.vx = Math.cos(angle) * force;
+        ball.vy = Math.sin(angle) * force;
 
     }
 
 }
 
-// ------------------------------
+// -------------------------------------------
 // برخورد مهره‌ها
-// ------------------------------
+// -------------------------------------------
 
 function playerCollision(a,b){
 
-    let dx = b.x - a.x;
-    let dy = b.y - a.y;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
 
-    let dist = Math.sqrt(dx*dx + dy*dy);
+    const dist = Math.sqrt(dx*dx + dy*dy);
 
-    let minDist = a.r + b.r;
+    const minDist = a.r + b.r;
 
     if(dist < minDist){
 
-        let angle = Math.atan2(dy,dx);
+        const angle = Math.atan2(dy,dx);
 
-        let overlap = minDist - dist;
+        const overlap = minDist - dist;
 
-        let mx = Math.cos(angle) * overlap / 2;
-        let my = Math.sin(angle) * overlap / 2;
+        const mx = Math.cos(angle) * overlap / 2;
+        const my = Math.sin(angle) * overlap / 2;
 
         a.x -= mx;
         a.y -= my;
@@ -380,22 +435,22 @@ function playerCollision(a,b){
         b.x += mx;
         b.y += my;
 
-        let tvx = a.vx;
-        let tvy = a.vy;
+        const tempVX = a.vx;
+        const tempVY = a.vy;
 
         a.vx = b.vx;
         a.vy = b.vy;
 
-        b.vx = tvx;
-        b.vy = tvy;
+        b.vx = tempVX;
+        b.vy = tempVY;
 
     }
 
 }
 
-// ------------------------------
-// تکمیل Update
-// ------------------------------
+// -------------------------------------------
+// موتور فیزیک
+// -------------------------------------------
 
 function physics(){
 
@@ -413,66 +468,59 @@ function physics(){
 
         for(let j=i+1;j<players.length;j++){
 
-            playerCollision(players[i],players[j]);
+            playerCollision(
+                players[i],
+                players[j]
+            );
 
         }
 
     }
 
             }
-// ======================================
-// Soccer Stars - Game.js
-// بخش ۴ از ۵
-// ======================================
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۴ از ۱۰
+// ===========================================
 
-// ------------------------------
-// بررسی نوبت
-// ------------------------------
+// -------------------------------------------
+// ریست زمین
+// -------------------------------------------
 
-function checkTurn(){
+function resetPositions(){
 
-    let stop = true;
+    createPlayers();
 
-    for(let p of players){
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
 
-        if(Math.abs(p.vx)>0.05 || Math.abs(p.vy)>0.05){
+    ball.vx = 0;
+    ball.vy = 0;
 
-            stop = false;
-
-        }
-
-    }
-
-    if(Math.abs(ball.vx)>0.05 || Math.abs(ball.vy)>0.05){
-
-        stop = false;
-
-    }
-
-    if(stop && moving){
-
-        moving = false;
-
-        currentTurn =
-            currentTurn==="blue"
-            ? "red"
-            : "blue";
-
-    }
+    moving = false;
 
 }
 
-// ------------------------------
+// -------------------------------------------
 // بررسی گل
-// ------------------------------
+// -------------------------------------------
 
 function checkGoal(){
 
-    let top = canvas.height/2-GAME.goalHeight/2;
-    let bottom = canvas.height/2+GAME.goalHeight/2;
+    const top =
+        canvas.height / 2 - GAME.goalHeight / 2;
 
-    // گل قرمز
-    if(ball.x<=ball.r && ball.y>top && ball.y<bottom){
+    const bottom =
+        canvas.height / 2 + GAME.goalHeight / 2;
+
+    // گل سمت چپ
+
+    if(
+        ball.x <= ball.r &&
+        ball.y > top &&
+        ball.y < bottom
+    ){
 
         redScore++;
 
@@ -480,8 +528,13 @@ function checkGoal(){
 
     }
 
-    // گل آبی
-    if(ball.x>=canvas.width-ball.r && ball.y>top && ball.y<bottom){
+    // گل سمت راست
+
+    if(
+        ball.x >= canvas.width - ball.r &&
+        ball.y > top &&
+        ball.y < bottom
+    ){
 
         blueScore++;
 
@@ -489,52 +542,101 @@ function checkGoal(){
 
     }
 
-}
+    // پایان بازی
 
-// ------------------------------
-// شروع مجدد
-// ------------------------------
+    if(
+        blueScore >= GAME.winScore ||
+        redScore >= GAME.winScore
+    ){
 
-function resetPositions(){
+        gameOver = true;
 
-    createPlayers();
-
-    ball.x=canvas.width/2;
-    ball.y=canvas.height/2;
-
-    ball.vx=0;
-    ball.vy=0;
-
-    moving=false;
+    }
 
 }
 
-// ------------------------------
+// -------------------------------------------
+// تغییر نوبت
+// -------------------------------------------
+
+function checkTurn(){
+
+    let stopped = true;
+
+    for(let p of players){
+
+        if(
+            Math.abs(p.vx) > 0.05 ||
+            Math.abs(p.vy) > 0.05
+        ){
+
+            stopped = false;
+
+        }
+
+    }
+
+    if(
+        Math.abs(ball.vx) > 0.05 ||
+        Math.abs(ball.vy) > 0.05
+    ){
+
+        stopped = false;
+
+    }
+
+    if(stopped && moving){
+
+        moving = false;
+
+        currentTurn =
+            currentTurn === "blue"
+            ? "red"
+            : "blue";
+
+    }
+
+}
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۵ از ۱۰
+// ===========================================
+
+// -------------------------------------------
 // رسم زمین
-// ------------------------------
+// -------------------------------------------
 
 function drawField(){
 
-    ctx.fillStyle="#2e8b57";
+    ctx.fillStyle = "#2e8b57";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    ctx.strokeStyle="white";
-    ctx.lineWidth=4;
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 4;
+
+    // کادر زمین
 
     ctx.strokeRect(
-        40,
-        40,
-        canvas.width-80,
-        canvas.height-80
+        GAME.fieldMargin,
+        GAME.fieldMargin,
+        canvas.width - GAME.fieldMargin * 2,
+        canvas.height - GAME.fieldMargin * 2
     );
 
     // خط وسط
 
     ctx.beginPath();
 
-    ctx.moveTo(canvas.width/2,40);
+    ctx.moveTo(
+        canvas.width/2,
+        GAME.fieldMargin
+    );
 
-    ctx.lineTo(canvas.width/2,canvas.height-40);
+    ctx.lineTo(
+        canvas.width/2,
+        canvas.height-GAME.fieldMargin
+    );
 
     ctx.stroke();
 
@@ -554,17 +656,17 @@ function drawField(){
 
     // دروازه چپ
 
-    ctx.lineWidth=8;
+    ctx.lineWidth = 8;
 
     ctx.beginPath();
 
     ctx.moveTo(
-        40,
+        GAME.fieldMargin,
         canvas.height/2-GAME.goalHeight/2
     );
 
     ctx.lineTo(
-        40,
+        GAME.fieldMargin,
         canvas.height/2+GAME.goalHeight/2
     );
 
@@ -575,32 +677,34 @@ function drawField(){
     ctx.beginPath();
 
     ctx.moveTo(
-        canvas.width-40,
+        canvas.width-GAME.fieldMargin,
         canvas.height/2-GAME.goalHeight/2
     );
 
     ctx.lineTo(
-        canvas.width-40,
+        canvas.width-GAME.fieldMargin,
         canvas.height/2+GAME.goalHeight/2
     );
 
     ctx.stroke();
 
 }
-// ======================================
-// Soccer Stars - Game.js
-// بخش ۵ از ۵
-// ======================================
 
-// ------------------------------
+// -------------------------------------------
 // رسم دایره
-// ------------------------------
+// -------------------------------------------
 
-function drawCircle(x, y, r, color){
+function drawCircle(x,y,r,color){
 
     ctx.beginPath();
 
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.arc(
+        x,
+        y,
+        r,
+        0,
+        Math.PI*2
+    );
 
     ctx.fillStyle = color;
 
@@ -608,17 +712,11 @@ function drawCircle(x, y, r, color){
 
 }
 
-// ------------------------------
-// حلقه اصلی بازی
-// ------------------------------
+// -------------------------------------------
+// رسم بازیکنان
+// -------------------------------------------
 
-function draw(){
-
-    update();
-
-    drawField();
-
-    // بازیکنان
+function drawPlayers(){
 
     for(let p of players){
 
@@ -631,7 +729,13 @@ function draw(){
 
     }
 
-    // توپ
+}
+
+// -------------------------------------------
+// رسم توپ
+// -------------------------------------------
+
+function drawBall(){
 
     drawCircle(
         ball.x,
@@ -640,49 +744,59 @@ function draw(){
         ball.color
     );
 
-    // حلقه دور مهره انتخاب شده
+}
 
-    if(selected){
+// -------------------------------------------
+// فلش قدرت
+// -------------------------------------------
 
-        ctx.beginPath();
+function drawAim(){
 
-        ctx.arc(
-            selected.x,
-            selected.y,
-            selected.r + 5,
-            0,
-            Math.PI * 2
-        );
+    if(!selected)
+        return;
 
-        ctx.strokeStyle = "yellow";
+    ctx.beginPath();
 
-        ctx.lineWidth = 3;
+    ctx.arc(
+        selected.x,
+        selected.y,
+        selected.r+5,
+        0,
+        Math.PI*2
+    );
 
-        ctx.stroke();
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 3;
+    ctx.stroke();
 
-        // فلش قدرت
+    ctx.beginPath();
 
-        ctx.beginPath();
+    ctx.moveTo(
+        selected.x,
+        selected.y
+    );
 
-        ctx.moveTo(
-            selected.x,
-            selected.y
-        );
+    ctx.lineTo(
+        currentX,
+        currentY
+    );
 
-        ctx.lineTo(
-            currentX,
-            currentY
-        );
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 4;
+    ctx.stroke();
 
-        ctx.strokeStyle = "yellow";
+}
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۶ از ۱۰
+// ===========================================
 
-        ctx.lineWidth = 4;
+// -------------------------------------------
+// نمایش امتیاز
+// -------------------------------------------
 
-        ctx.stroke();
-
-    }
-
-    // امتیاز
+function drawScore(){
 
     ctx.fillStyle = "white";
 
@@ -691,35 +805,581 @@ function draw(){
     ctx.textAlign = "center";
 
     ctx.fillText(
-
         blueScore + " : " + redScore,
-
         canvas.width / 2,
-
         50
-
     );
 
-    // نوبت
+}
+
+// -------------------------------------------
+// نمایش نوبت
+// -------------------------------------------
+
+function drawTurn(){
+
+    ctx.fillStyle = "white";
 
     ctx.font = "24px Arial";
 
     ctx.fillText(
-
         "Turn : " + currentTurn,
-
         canvas.width / 2,
-
         90
-
     );
+
+}
+
+// -------------------------------------------
+// پایان بازی
+// -------------------------------------------
+
+function drawGameOver(){
+
+    if(!gameOver)
+        return;
+
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.fillStyle = "yellow";
+
+    ctx.font = "60px Arial";
+
+    ctx.textAlign = "center";
+
+    const winner =
+        blueScore > redScore
+        ? "BLUE WINS!"
+        : "RED WINS!";
+
+    ctx.fillText(
+        winner,
+        canvas.width / 2,
+        canvas.height / 2
+    );
+
+    ctx.font = "28px Arial";
+
+    ctx.fillText(
+        "Refresh Page To Play Again",
+        canvas.width / 2,
+        canvas.height / 2 + 60
+    );
+
+}
+
+// -------------------------------------------
+// حلقه اصلی بازی
+// -------------------------------------------
+
+function draw(){
+
+    update();
+
+    drawField();
+
+    drawPlayers();
+
+    drawBall();
+
+    drawAim();
+
+    drawScore();
+
+    drawTurn();
+
+    drawGameOver();
 
     requestAnimationFrame(draw);
 
 }
 
-// ------------------------------
+// -------------------------------------------
 // شروع بازی
-// ------------------------------
+// -------------------------------------------
 
 draw();
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۷ از ۱۰
+// ===========================================
+
+// -------------------------------------------
+// شدت برخورد توپ
+// -------------------------------------------
+
+function ballCollision(player){
+
+    const dx = ball.x - player.x;
+    const dy = ball.y - player.y;
+
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    const minDist = ball.r + player.r;
+
+    if(dist < minDist){
+
+        const angle = Math.atan2(dy, dx);
+
+        const speed = Math.sqrt(
+            player.vx * player.vx +
+            player.vy * player.vy
+        );
+
+        const force = Math.max(6, speed + 5);
+
+        ball.vx = Math.cos(angle) * force;
+        ball.vy = Math.sin(angle) * force;
+
+        // جلوگیری از فرو رفتن توپ
+
+        const overlap = minDist - dist;
+
+        ball.x += Math.cos(angle) * overlap;
+        ball.y += Math.sin(angle) * overlap;
+
+    }
+
+}
+
+// -------------------------------------------
+// سایه مهره
+// -------------------------------------------
+
+function drawDiskShadow(player){
+
+    ctx.beginPath();
+
+    ctx.arc(
+        player.x + 3,
+        player.y + 4,
+        player.r,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+
+    ctx.fill();
+
+}
+
+// -------------------------------------------
+// رسم مهره حرفه‌ای
+// -------------------------------------------
+
+function drawPlayers(){
+
+    for(let p of players){
+
+        drawDiskShadow(p);
+
+        drawCircle(
+            p.x,
+            p.y,
+            p.r,
+            p.color
+        );
+
+        // حاشیه سفید
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.r,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+    }
+
+}
+
+// -------------------------------------------
+// رسم توپ حرفه‌ای
+// -------------------------------------------
+
+function drawBall(){
+
+    drawCircle(
+        ball.x,
+        ball.y,
+        ball.r,
+        "#ffffff"
+    );
+
+    ctx.beginPath();
+
+    ctx.arc(
+        ball.x,
+        ball.y,
+        ball.r,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.strokeStyle = "#cccccc";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+}
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۸ از ۱۰
+// ===========================================
+
+// -------------------------------------------
+// هوش مصنوعی
+// -------------------------------------------
+
+const AI = {
+
+    enabled: true,
+
+    team: "red"
+
+};
+
+// -------------------------------------------
+// پیدا کردن نزدیک‌ترین مهره
+// -------------------------------------------
+
+function getClosestPlayer(){
+
+    let best = null;
+
+    let bestDist = Infinity;
+
+    for(let p of players){
+
+        if(p.team !== AI.team)
+            continue;
+
+        const dx = ball.x - p.x;
+        const dy = ball.y - p.y;
+
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if(dist < bestDist){
+
+            bestDist = dist;
+
+            best = p;
+
+        }
+
+    }
+
+    return best;
+
+}
+
+// -------------------------------------------
+// حرکت ربات
+// -------------------------------------------
+
+function aiMove(){
+
+    if(!AI.enabled)
+        return;
+
+    if(gameOver)
+        return;
+
+    if(currentTurn !== AI.team)
+        return;
+
+    if(moving)
+        return;
+
+    const player = getClosestPlayer();
+
+    if(player == null)
+        return;
+
+    const dx = ball.x - player.x;
+    const dy = ball.y - player.y;
+
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    const power = Math.min(
+        GAME.maxPower,
+        dist
+    );
+
+    player.vx = (dx / dist) * power / 6;
+    player.vy = (dy / dist) * power / 6;
+
+    moving = true;
+
+}
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۹ از ۱۰
+// ===========================================
+
+// -------------------------------------------
+// افکت ذرات
+// -------------------------------------------
+
+const particles = [];
+
+// ساخت ذره
+
+function createParticles(x, y, color) {
+
+    for (let i = 0; i < 20; i++) {
+
+        particles.push({
+
+            x: x,
+
+            y: y,
+
+            vx: (Math.random() - 0.5) * 8,
+
+            vy: (Math.random() - 0.5) * 8,
+
+            life: 40,
+
+            color: color
+
+        });
+
+    }
+
+}
+
+// بروزرسانی ذرات
+
+function updateParticles() {
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+
+        let p = particles[i];
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+
+        p.life--;
+
+        if (p.life <= 0) {
+
+            particles.splice(i, 1);
+
+        }
+
+    }
+
+}
+
+// رسم ذرات
+
+function drawParticles() {
+
+    for (let p of particles) {
+
+        ctx.globalAlpha = p.life / 40;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle = p.color;
+
+        ctx.fill();
+
+    }
+
+    ctx.globalAlpha = 1;
+
+}
+
+// -------------------------------------------
+// لرزش صفحه
+// -------------------------------------------
+
+function shakeScreen() {
+
+    if (navigator.vibrate) {
+
+        navigator.vibrate(120);
+
+    }
+
+}
+
+// -------------------------------------------
+// افکت گل
+// -------------------------------------------
+
+function goalEffect(team) {
+
+    if (team === "blue") {
+
+        createParticles(
+            canvas.width / 2,
+            canvas.height / 2,
+            "#2196F3"
+        );
+
+    } else {
+
+        createParticles(
+            canvas.width / 2,
+            canvas.height / 2,
+            "#F44336"
+        );
+
+    }
+
+    shakeScreen();
+
+}
+// ===========================================
+// Soccer Stars
+// game.js
+// بخش ۱۰ از ۱۰
+// ===========================================
+
+// -------------------------
+// شروع دوباره بازی
+// -------------------------
+
+function restartGame(){
+
+    blueScore = 0;
+    redScore = 0;
+
+    currentTurn = "blue";
+
+    moving = false;
+
+    gameOver = false;
+
+    particles.length = 0;
+
+    createPlayers();
+
+}
+
+// -------------------------
+// کلیک برای شروع دوباره
+// -------------------------
+
+canvas.addEventListener("click",function(){
+
+    if(gameOver){
+
+        restartGame();
+
+    }
+
+});
+
+// -------------------------
+// نمایش پیام راهنما
+// -------------------------
+
+function drawHint(){
+
+    if(gameOver){
+
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.textAlign = "center";
+
+        ctx.fillText(
+            "Click To Restart",
+            canvas.width/2,
+            canvas.height/2 + 90
+        );
+
+        return;
+
+    }
+
+    ctx.fillStyle = "white";
+
+    ctx.font = "20px Arial";
+
+    ctx.textAlign = "left";
+
+    ctx.fillText(
+        "Blue Turn : Blue",
+        20,
+        30
+    );
+
+    ctx.textAlign = "right";
+
+    ctx.fillText(
+        "First To " + GAME.winScore + " Goals",
+        canvas.width-20,
+        30
+    );
+
+}
+
+// -------------------------
+// حلقه اصلی نهایی
+// -------------------------
+
+function gameLoop(){
+
+    update();
+
+    drawField();
+
+    drawPlayers();
+
+    drawBall();
+
+    drawParticles();
+
+    drawAim();
+
+    drawScore();
+
+    drawTurn();
+
+    drawHint();
+
+    drawGameOver();
+
+    requestAnimationFrame(gameLoop);
+
+}
+
+// -------------------------
+// شروع بازی
+// -------------------------
+
+restartGame();
+
+gameLoop();
